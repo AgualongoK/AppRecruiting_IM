@@ -1,0 +1,5 @@
+{
+  "name": "Dashboard de Candidatos",
+  "description": "Un dashboard interactivo para visualizar y buscar candidatos desde una hoja de cálculo de Google.",
+  "requestFramePermissions": []
+}
