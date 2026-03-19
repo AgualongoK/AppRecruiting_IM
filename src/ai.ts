@@ -52,12 +52,7 @@ export async function recommendCandidatesForNeeds(needs: string, candidates: any
     "${needs}"
     
     Y tengo la siguiente lista de candidatos (en formato JSON):
-    ${JSON.stringify(candidates.map(c => ({
-      id: c.id,
-      Nombre: c.Nombre,
-      Perfil: c.Perfil,
-      Conocimientos: c['Key Knowledge']
-    })))}
+    ${JSON.stringify(candidates)}
     
     Devuelve una lista de los IDs de los candidatos que mejor encajen con estas necesidades, junto con una breve justificación para cada uno y una puntuación del 0 al 100 indicando el nivel de encaje.
     Responde en formato JSON.

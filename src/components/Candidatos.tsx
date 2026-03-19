@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { Search, Edit2, X, Plus, Download } from 'lucide-react';
 import { Candidate } from '../types';
-import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 export const Candidatos: React.FC = () => {
   const { allCandidates, updateCandidate, customFields, addCustomField, applications, offers } = useAppContext();
@@ -33,16 +33,10 @@ export const Candidatos: React.FC = () => {
   };
 
   const handleDownload = () => {
-    const csv = Papa.unparse(allCandidates);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'candidatos.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.json_to_sheet(allCandidates);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Candidatos");
+    XLSX.writeFile(workbook, "candidatos.xlsx");
   };
 
   return (
@@ -63,7 +57,7 @@ export const Candidatos: React.FC = () => {
           className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <Download className="h-4 w-4" />
-          <span>Exportar CSV</span>
+          <span>Exportar Excel</span>
         </button>
       </div>
 
@@ -77,9 +71,6 @@ export const Candidatos: React.FC = () => {
                 <th className="p-4 font-medium">Key Knowledge</th>
                 <th className="p-4 font-medium">Localización</th>
                 <th className="p-4 font-medium">Origen</th>
-                {customFields.map(field => (
-                  <th key={field} className="p-4 font-medium">{field}</th>
-                ))}
                 <th className="p-4 font-medium text-right">Acciones</th>
               </tr>
             </thead>
@@ -100,9 +91,6 @@ export const Candidatos: React.FC = () => {
                         {candidate.source === 'sheet' ? 'Sheet' : 'Driven Value'}
                       </span>
                     </td>
-                    {customFields.map(field => (
-                      <td key={field} className="p-4 text-gray-600">{candidate[field] || '-'}</td>
-                    ))}
                     <td className="p-4 text-right">
                       <button 
                         onClick={() => setEditingCandidate({ ...candidate })}
@@ -116,7 +104,7 @@ export const Candidatos: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6 + customFields.length} className="p-8 text-center text-gray-500">
+                  <td colSpan={6} className="p-8 text-center text-gray-500">
                     No se encontraron candidatos que coincidan con la búsqueda.
                   </td>
                 </tr>
