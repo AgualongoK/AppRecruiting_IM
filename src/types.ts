@@ -20,9 +20,11 @@ export interface Offer {
 }
 
 export interface Application {
+  id: string;
   candidateId: string;
   offerId: string;
-  status: 'pending' | 'pass' | 'no_pass';
-  recommendation?: string;
+  status: 'pending' | 'pass' | 'no-pass';
+  aiRecommendation?: string;
   isFit?: boolean;
+  score?: number;
 }

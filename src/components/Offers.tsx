@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { Offer, Candidate } from '../types';
-import { Plus, Briefcase, Users, CheckCircle, XCircle, Clock, Sparkles } from 'lucide-react';
-import { evaluateCandidateForOffer } from '../ai';
+import { Plus, Briefcase, Users, CheckCircle, XCircle, Clock, Sparkles, MessageSquare } from 'lucide-react';
+import { evaluateCandidateForOffer, evaluateAllCandidatesForOffer } from '../ai';
 
 export const Offers: React.FC = () => {
   const { offers, addOffer, updateOffer, deleteOffer, allCandidates, applications, addApplication, updateApplicationStatus } = useAppContext();
@@ -11,16 +11,44 @@ export const Offers: React.FC = () => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  const handleAddOffer = () => {
+  const handleAddOffer = async () => {
     if (newOffer.title && newOffer.description) {
-      addOffer({
+      const newOfferId = crypto.randomUUID();
+      const offerToSave: Offer = {
+        id: newOfferId,
         title: newOffer.title,
         description: newOffer.description,
         requirements: newOffer.requirements || '',
         status: 'open',
-      });
+      };
+      
+      addOffer(offerToSave);
       setIsAdding(false);
       setNewOffer({});
+      setSelectedOffer(offerToSave);
+
+      // Auto-evaluate all candidates
+      setIsEvaluating(true);
+      try {
+        const evaluations = await evaluateAllCandidatesForOffer(offerToSave, allCandidates);
+        
+        evaluations.forEach((evalResult: any) => {
+          if (evalResult.isFit) {
+            addApplication({
+              id: crypto.randomUUID(),
+              candidateId: evalResult.candidateId,
+              offerId: newOfferId,
+              status: 'pending',
+              aiRecommendation: evalResult.recommendation,
+              isFit: evalResult.isFit,
+              score: evalResult.score
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Error auto-evaluating candidates:", error);
+      }
+      setIsEvaluating(false);
     }
   };
 
@@ -33,11 +61,13 @@ export const Offers: React.FC = () => {
       try {
         const evaluation = await evaluateCandidateForOffer(candidate, offer);
         addApplication({
+          id: crypto.randomUUID(),
           candidateId,
           offerId,
           status: 'pending',
           aiRecommendation: evaluation.recommendation,
-          isFit: evaluation.isFit
+          isFit: evaluation.isFit,
+          score: evaluation.score
         });
       } catch (error) {
         console.error("Error evaluating candidate:", error);
@@ -104,9 +134,10 @@ export const Offers: React.FC = () => {
               </button>
               <button
                 onClick={handleAddOffer}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={isEvaluating}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
-                Guardar Oferta
+                {isEvaluating ? 'Evaluando candidatos...' : 'Guardar Oferta'}
               </button>
             </div>
           </div>
@@ -191,21 +222,46 @@ export const Offers: React.FC = () => {
                     if (!candidate) return null;
 
                     return (
-                      <div key={app.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{candidate.Nombre}</h4>
-                            <p className="text-sm text-gray-500">{candidate.Perfil}</p>
+                      <div key={app.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-900 font-bold text-lg shrink-0">
+                              {candidate.Nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-3 mb-1">
+                                <h4 className="font-semibold text-gray-900 text-lg">{candidate.Nombre}</h4>
+                                <span className="px-3 py-1 bg-white border border-gray-200 text-gray-800 text-xs font-medium rounded-full">
+                                  {candidate.Perfil}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500">
+                                {candidate['Key Knowledge']?.split(',').slice(0, 4).join(' ')} {candidate['Key Knowledge']?.split(',').length > 4 ? '+1' : ''}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {app.status === 'pending' && <span className="flex items-center gap-1 text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full"><Clock className="h-3 w-3"/> Pendiente</span>}
-                            {app.status === 'pass' && <span className="flex items-center gap-1 text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full"><CheckCircle className="h-3 w-3"/> Apto</span>}
-                            {app.status === 'no-pass' && <span className="flex items-center gap-1 text-xs px-2 py-1 bg-red-100 text-red-800 rounded-full"><XCircle className="h-3 w-3"/> No Apto</span>}
+
+                          <div className="flex items-center gap-6 w-full sm:w-auto justify-end">
+                            <div className="flex items-center gap-1 text-gray-500">
+                              <MessageSquare className="h-5 w-5" />
+                              <span className="text-sm font-medium">2</span>
+                            </div>
+                            
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500 mb-0.5">Match</div>
+                              <div className="text-emerald-600 font-bold text-lg leading-none">{app.score || (app.isFit ? 85 : 40)}%</div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {app.status === 'pending' && <span className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full border border-yellow-100"><Clock className="h-4 w-4"/> Pendiente</span>}
+                              {app.status === 'pass' && <span className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100"><CheckCircle className="h-4 w-4"/> Aprobado</span>}
+                              {app.status === 'no-pass' && <span className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 bg-red-50 text-red-700 rounded-full border border-red-100"><XCircle className="h-4 w-4"/> No Apto</span>}
+                            </div>
                           </div>
                         </div>
-                        
+
                         {app.aiRecommendation && (
-                          <div className={`mt-3 p-3 rounded-md text-sm ${app.isFit ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-orange-50 text-orange-800 border border-orange-100'}`}>
+                          <div className={`p-3 rounded-md text-sm ${app.isFit ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-orange-50 text-orange-800 border border-orange-100'}`}>
                             <div className="flex items-center gap-1 font-semibold mb-1">
                               <Sparkles className="h-4 w-4" />
                               Recomendación IA: {app.isFit ? 'Buen Encaje' : 'No Recomendado'}
@@ -214,7 +270,7 @@ export const Offers: React.FC = () => {
                           </div>
                         )}
 
-                        <div className="mt-4 flex gap-2">
+                        <div className="flex gap-2">
                           <button 
                             onClick={() => updateApplicationStatus(app.id, 'pass')}
                             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${app.status === 'pass' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700'}`}

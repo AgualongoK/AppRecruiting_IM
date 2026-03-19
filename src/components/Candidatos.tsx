@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Search, Edit2, X, Plus, Download } from 'lucide-react';
+import { Search, Edit2, X, Plus, Download, MapPin, Briefcase, Mail, Phone, MessageSquare, ExternalLink } from 'lucide-react';
 import { Candidate } from '../types';
 import * as XLSX from 'xlsx';
 
@@ -61,57 +61,87 @@ export const Candidatos: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider">
-                <th className="p-4 font-medium">Nombre</th>
-                <th className="p-4 font-medium">Perfil</th>
-                <th className="p-4 font-medium">Key Knowledge</th>
-                <th className="p-4 font-medium">Localización</th>
-                <th className="p-4 font-medium">Origen</th>
-                <th className="p-4 font-medium text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredData.length > 0 ? (
-                filteredData.map((candidate) => (
-                  <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4 text-gray-900 font-medium">{candidate.Nombre || '-'}</td>
-                    <td className="p-4 text-gray-600">{candidate.Perfil || '-'}</td>
-                    <td className="p-4 text-gray-600">
-                      <div className="max-w-xs truncate" title={candidate['Key Knowledge']}>
-                        {candidate['Key Knowledge'] || '-'}
-                      </div>
-                    </td>
-                    <td className="p-4 text-gray-600">{candidate.Localización || '-'}</td>
-                    <td className="p-4 text-gray-600">
-                      <span className={`px-2 py-1 text-xs rounded-full ${candidate.source === 'sheet' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredData.length > 0 ? (
+          filteredData.map((candidate) => (
+            <div key={candidate.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col h-full group">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xl shrink-0 border border-indigo-100/50 shadow-inner">
+                    {candidate.Nombre ? candidate.Nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1 group-hover:text-indigo-600 transition-colors">
+                      {candidate.Nombre || 'Sin Nombre'}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                        {candidate.Perfil || 'Sin Perfil'}
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${candidate.source === 'sheet' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
                         {candidate.source === 'sheet' ? 'Sheet' : 'Driven Value'}
                       </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button 
-                        onClick={() => setEditingCandidate({ ...candidate })}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editar Candidato"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-500">
-                    No se encontraron candidatos que coincidan con la búsqueda.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setEditingCandidate({ ...candidate })}
+                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  title="Editar Candidato"
+                >
+                  <Edit2 className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 flex-grow">
+                {candidate['Key Knowledge'] && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Briefcase className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
+                    <p className="line-clamp-2" title={candidate['Key Knowledge']}>
+                      {candidate['Key Knowledge']}
+                    </p>
+                  </div>
+                )}
+                
+                {candidate.Localización && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="truncate">{candidate.Localización}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3 text-gray-400">
+                  <button className="hover:text-gray-600 transition-colors" title="Enviar email">
+                    <Mail className="w-4 h-4" />
+                  </button>
+                  <button className="hover:text-gray-600 transition-colors" title="Llamar">
+                    <Phone className="w-4 h-4" />
+                  </button>
+                  <button className="hover:text-gray-600 transition-colors" title="Ver LinkedIn">
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={() => setEditingCandidate({ ...candidate })}
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                >
+                  Ver Perfil
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-gray-100 border-dashed">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No se encontraron candidatos</h3>
+            <p className="text-gray-500">Intenta ajustar los términos de búsqueda.</p>
+          </div>
+        )}
       </div>
 
       {/* Edit Modal */}
