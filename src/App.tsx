@@ -9,10 +9,9 @@ import { Dashboard } from './components/Dashboard';
 import { Candidatos } from './components/Candidatos';
 import { DrivenValue } from './components/DrivenValue';
 import { Offers } from './components/Offers';
-import { ClientNeeds } from './components/ClientNeeds';
 import { LayoutDashboard, Users, FileUp, Briefcase, Sparkles, LogOut, RefreshCw } from 'lucide-react';
 
-type Tab = 'dashboard' | 'candidatos' | 'driven-value' | 'ofertas' | 'necesidades';
+type Tab = 'dashboard' | 'candidatos' | 'driven-value' | 'ofertas';
 
 function AppContent() {
   const { isRefreshing, fetchData, lastUpdated } = useAppContext();
@@ -28,8 +27,6 @@ function AppContent() {
         return <DrivenValue />;
       case 'ofertas':
         return <Offers />;
-      case 'necesidades':
-        return <ClientNeeds />;
       default:
         return <Dashboard />;
     }
@@ -78,7 +75,7 @@ function AppContent() {
             }`}
           >
             <FileUp className="h-5 w-5" />
-            Driven Value
+            Team Driven Value
           </button>
           <button
             onClick={() => setActiveTab('ofertas')}
@@ -90,17 +87,6 @@ function AppContent() {
           >
             <Briefcase className="h-5 w-5" />
             Ofertas
-          </button>
-          <button
-            onClick={() => setActiveTab('necesidades')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-              activeTab === 'necesidades' 
-                ? 'bg-blue-50 text-blue-700 font-medium' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            }`}
-          >
-            <Sparkles className="h-5 w-5" />
-            Necesidades Cliente
           </button>
         </nav>
 

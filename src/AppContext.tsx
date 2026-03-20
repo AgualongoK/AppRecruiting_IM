@@ -18,6 +18,7 @@ interface AppContextType {
   updateCandidate: (id: string, updates: Partial<Candidate>) => void;
   addCustomField: (field: string) => void;
   addDrivenValueCandidates: (candidates: Candidate[]) => void;
+  deleteDrivenValueCandidate: (id: string) => void;
   addOffer: (offer: Offer) => void;
   updateOffer: (id: string, updates: Partial<Offer>) => void;
   deleteOffer: (id: string) => void;
@@ -29,34 +30,31 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sheetCandidates, setSheetCandidates] = useState<Candidate[]>([]);
-  const [drivenValueCandidates, setDrivenValueCandidates] = useState<Candidate[]>([]);
-  const [localEdits, setLocalEdits] = useState<Record<string, Partial<Candidate>>>({});
-  const [customFields, setCustomFields] = useState<string[]>([]);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [drivenValueCandidates, setDrivenValueCandidates] = useState<Candidate[]>(() => {
+    const saved = localStorage.getItem('drivenValueCandidates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [localEdits, setLocalEdits] = useState<Record<string, Partial<Candidate>>>(() => {
+    const saved = localStorage.getItem('localEdits');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [customFields, setCustomFields] = useState<string[]>(() => {
+    const saved = localStorage.getItem('customFields');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [offers, setOffers] = useState<Offer[]>(() => {
+    const saved = localStorage.getItem('offers');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [applications, setApplications] = useState<Application[]>(() => {
+    const saved = localStorage.getItem('applications');
+    return saved ? JSON.parse(saved) : [];
+  });
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Load state from localStorage on mount
-  useEffect(() => {
-    const savedEdits = localStorage.getItem('localEdits');
-    if (savedEdits) setLocalEdits(JSON.parse(savedEdits));
-    
-    const savedDriven = localStorage.getItem('drivenValueCandidates');
-    if (savedDriven) setDrivenValueCandidates(JSON.parse(savedDriven));
-    
-    const savedFields = localStorage.getItem('customFields');
-    if (savedFields) setCustomFields(JSON.parse(savedFields));
-    
-    const savedOffers = localStorage.getItem('offers');
-    if (savedOffers) setOffers(JSON.parse(savedOffers));
-    
-    const savedApps = localStorage.getItem('applications');
-    if (savedApps) setApplications(JSON.parse(savedApps));
-  }, []);
 
   // Save state to localStorage on change
   useEffect(() => {
@@ -146,6 +144,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDrivenValueCandidates(prev => [...prev, ...candidates]);
   };
 
+  const deleteDrivenValueCandidate = (id: string) => {
+    setDrivenValueCandidates(prev => prev.filter(c => c.id !== id));
+  };
+
   const addOffer = (offer: Offer) => {
     setOffers(prev => [...prev, offer]);
   };
@@ -192,6 +194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateCandidate,
       addCustomField,
       addDrivenValueCandidates,
+      deleteDrivenValueCandidate,
       addOffer,
       updateOffer,
       deleteOffer,

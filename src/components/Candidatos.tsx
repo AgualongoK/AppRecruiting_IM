@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { Search, Edit2, X, Plus, Download, MapPin, Briefcase, Mail, Phone, MessageSquare, ExternalLink } from 'lucide-react';
+import { Search, Edit2, X, Plus, Download, MapPin, Briefcase, Mail, Phone, MessageSquare, ExternalLink, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Candidate } from '../types';
 import * as XLSX from 'xlsx';
 
@@ -10,12 +10,51 @@ export const Candidatos: React.FC = () => {
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const [newField, setNewField] = useState('');
   const [showNewFieldInput, setShowNewFieldInput] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Todos' | 'Aprobados' | 'Descartados' | 'Pendientes'>('Todos');
 
-  const filteredData = allCandidates.filter(candidate => 
+  const getCandidateStatusInfo = (candidateId: string) => {
+    const candidateApps = applications.filter(app => app.candidateId === candidateId);
+    if (candidateApps.length === 0) return { status: 'unassigned', match: null };
+    
+    const hasPass = candidateApps.some(app => app.status === 'pass');
+    const hasNoPass = candidateApps.some(app => app.status === 'no-pass');
+    const hasPending = candidateApps.some(app => app.status === 'pending');
+    
+    let status = 'unassigned';
+    if (hasPass) status = 'pass';
+    else if (hasNoPass) status = 'no-pass';
+    else if (hasPending) status = 'pending';
+    
+    const maxScore = Math.max(...candidateApps.map(app => app.score || (app.isFit ? 85 : 40)));
+    
+    return { status, match: maxScore };
+  };
+
+  const candidatesWithStatus = allCandidates.map(c => ({
+    ...c,
+    ...getCandidateStatusInfo(c.id)
+  }));
+
+  const filteredByTab = candidatesWithStatus.filter(c => {
+    if (activeTab === 'Todos') return true;
+    if (activeTab === 'Aprobados') return c.status === 'pass';
+    if (activeTab === 'Descartados') return c.status === 'no-pass';
+    if (activeTab === 'Pendientes') return c.status === 'pending' || c.status === 'unassigned';
+    return true;
+  });
+
+  const finalFilteredData = filteredByTab.filter(candidate => 
     Object.values(candidate).some(val => 
       String(val).toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
+  const counts = {
+    Todos: candidatesWithStatus.length,
+    Aprobados: candidatesWithStatus.filter(c => c.status === 'pass').length,
+    Descartados: candidatesWithStatus.filter(c => c.status === 'no-pass').length,
+    Pendientes: candidatesWithStatus.filter(c => c.status === 'pending' || c.status === 'unassigned').length,
+  };
 
   const handleSave = () => {
     if (editingCandidate) {
@@ -40,106 +79,114 @@ export const Candidatos: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <input
-            type="text"
-            placeholder="Buscar candidatos..."
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64 bg-white"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+        <div className="flex items-center gap-2 bg-gray-100/80 p-1.5 rounded-xl w-full sm:w-auto overflow-x-auto">
+          {(['Todos', 'Aprobados', 'Descartados', 'Pendientes'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === tab 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+              }`}
+            >
+              {tab} ({counts[tab]})
+            </button>
+          ))}
         </div>
-        <button 
-          onClick={handleDownload}
-          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          <span>Exportar Excel</span>
-        </button>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Buscar candidatos..."
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64 bg-white text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={handleDownload}
+            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm shrink-0"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar</span>
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredData.length > 0 ? (
-          filteredData.map((candidate) => (
-            <div key={candidate.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col h-full group">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xl shrink-0 border border-indigo-100/50 shadow-inner">
-                    {candidate.Nombre ? candidate.Nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
+      <div className="space-y-4">
+        {finalFilteredData.length > 0 ? (
+          finalFilteredData.map((candidate) => (
+            <div 
+              key={candidate.id} 
+              className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
+              onClick={() => setEditingCandidate({ ...candidate })}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 font-bold text-sm shrink-0">
+                  {candidate.Nombre ? candidate.Nombre.trim().split(/\s+/).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                    <h3 className="font-semibold text-gray-900 text-lg leading-none">{candidate.Nombre || 'Sin Nombre'}</h3>
+                    <span className="px-3 py-1 bg-white border border-gray-200 text-gray-800 text-xs font-semibold rounded-full shadow-sm">
+                      {candidate.Perfil || candidate.Candidatura || 'Sin Perfil'}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1 group-hover:text-indigo-600 transition-colors">
-                      {candidate.Nombre || 'Sin Nombre'}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                        {candidate.Perfil || 'Sin Perfil'}
-                      </span>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${candidate.source === 'sheet' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
-                        {candidate.source === 'sheet' ? 'Sheet' : 'Driven Value'}
-                      </span>
+                  <p className="text-sm text-gray-500 line-clamp-1">
+                    {candidate['Key Knowledge'] || 'Sin conocimientos registrados'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-6 sm:gap-8 justify-between sm:justify-end w-full sm:w-auto border-t sm:border-t-0 border-gray-100 pt-4 sm:pt-0">
+                <div className="flex items-center gap-1.5 text-gray-400">
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="text-sm font-medium">
+                    {applications.filter(a => a.candidateId === candidate.id).length}
+                  </span>
+                </div>
+                
+                {candidate.match !== null && (
+                  <div className="text-center min-w-[60px]">
+                    <div className="text-xs text-gray-500 mb-0.5">Match</div>
+                    <div className={`font-bold text-lg leading-none ${candidate.match >= 80 ? 'text-emerald-600' : candidate.match >= 50 ? 'text-amber-500' : 'text-red-600'}`}>
+                      {candidate.match}%
                     </div>
                   </div>
-                </div>
-                <button 
-                  onClick={() => setEditingCandidate({ ...candidate })}
-                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  title="Editar Candidato"
-                >
-                  <Edit2 className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="space-y-3 flex-grow">
-                {candidate['Key Knowledge'] && (
-                  <div className="flex items-start gap-2 text-sm text-gray-600">
-                    <Briefcase className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
-                    <p className="line-clamp-2" title={candidate['Key Knowledge']}>
-                      {candidate['Key Knowledge']}
-                    </p>
-                  </div>
                 )}
                 
-                {candidate.Localización && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-                    <span className="truncate">{candidate.Localización}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-3 text-gray-400">
-                  <button className="hover:text-gray-600 transition-colors" title="Enviar email">
-                    <Mail className="w-4 h-4" />
-                  </button>
-                  <button className="hover:text-gray-600 transition-colors" title="Llamar">
-                    <Phone className="w-4 h-4" />
-                  </button>
-                  <button className="hover:text-gray-600 transition-colors" title="Ver LinkedIn">
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
+                <div className="w-32 flex justify-end">
+                  {candidate.status === 'pass' && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-100">
+                      <CheckCircle className="w-4 h-4" /> Aprobado
+                    </span>
+                  )}
+                  {candidate.status === 'no-pass' && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-sm font-medium border border-red-100">
+                      <XCircle className="w-4 h-4" /> Descartado
+                    </span>
+                  )}
+                  {(candidate.status === 'pending' || candidate.status === 'unassigned') && (
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-sm font-medium border border-gray-200">
+                      <Clock className="w-4 h-4" /> Pendiente
+                    </span>
+                  )}
                 </div>
-                
-                <button 
-                  onClick={() => setEditingCandidate({ ...candidate })}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                >
-                  Ver Perfil
-                </button>
               </div>
             </div>
           ))
         ) : (
-          <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-gray-100 border-dashed">
+          <div className="py-16 text-center bg-white rounded-2xl border border-gray-200 border-dashed">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-1">No se encontraron candidatos</h3>
-            <p className="text-gray-500">Intenta ajustar los términos de búsqueda.</p>
+            <p className="text-gray-500">Intenta ajustar los términos de búsqueda o cambiar de pestaña.</p>
           </div>
         )}
       </div>
@@ -222,6 +269,43 @@ export const Candidatos: React.FC = () => {
                     value={editingCandidate['Información del Contacto'] || ''}
                     onChange={e => setEditingCandidate({...editingCandidate, 'Información del Contacto': e.target.value})}
                   />
+                </div>
+
+                {/* New Fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Entrevistador</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={editingCandidate.interviewer || ''}
+                    onChange={e => setEditingCandidate({...editingCandidate, interviewer: e.target.value})}
+                    placeholder="¿Quién lo está entrevistando?"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado de Entrevista</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    value={editingCandidate.interviewStatus || ''}
+                    onChange={e => setEditingCandidate({...editingCandidate, interviewStatus: e.target.value as any})}
+                  >
+                    <option value="">Seleccionar estado...</option>
+                    <option value="pendiente de entrevistar">Pendiente de entrevistar</option>
+                    <option value="entrevistando">Entrevistando</option>
+                    <option value="entrevistado">Entrevistado</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2 flex items-center gap-2 mt-2">
+                  <input 
+                    type="checkbox" 
+                    id="isDrivenValue"
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    checked={editingCandidate.isDrivenValue || false}
+                    onChange={e => setEditingCandidate({...editingCandidate, isDrivenValue: e.target.checked})}
+                  />
+                  <label htmlFor="isDrivenValue" className="text-sm font-medium text-gray-700">
+                    Es Team Driven Value
+                  </label>
                 </div>
                 
                 {/* Custom Fields */}
@@ -322,3 +406,4 @@ export const Candidatos: React.FC = () => {
     </div>
   );
 };
+

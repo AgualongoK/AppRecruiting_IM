@@ -9,6 +9,10 @@ export interface Candidate {
   'Información del Contacto': string;
   'Fecha Solicitud': string;
   source: 'sheet' | 'driven-value';
+  interviewer?: string;
+  interviewStatus?: 'pendiente de entrevistar' | 'entrevistando' | 'entrevistado';
+  isDrivenValue?: boolean;
+  drivenValueStatus?: 'Proyecto' | 'Staffing';
   [key: string]: any;
 }
 
