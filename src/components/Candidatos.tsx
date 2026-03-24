@@ -81,15 +81,15 @@ export const Candidatos: React.FC = () => {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
-        <div className="flex items-center gap-2 bg-gray-100/80 p-1.5 rounded-xl w-full sm:w-auto overflow-x-auto">
+        <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-xl w-full sm:w-auto overflow-x-auto shadow-inner">
           {(['Todos', 'Aprobados', 'Descartados', 'Pendientes'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === tab 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' 
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }`}
             >
               {tab} ({counts[tab]})
@@ -99,20 +99,20 @@ export const Candidatos: React.FC = () => {
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
             <input
               type="text"
               placeholder="Buscar candidatos..."
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64 bg-white text-sm"
+              className="pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full sm:w-64 bg-white text-sm shadow-sm transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button 
             onClick={handleDownload}
-            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm shrink-0"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all text-sm font-medium shadow-sm shrink-0"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 text-slate-500" />
             <span className="hidden sm:inline">Exportar</span>
           </button>
         </div>
@@ -123,38 +123,46 @@ export const Candidatos: React.FC = () => {
           finalFilteredData.map((candidate) => (
             <div 
               key={candidate.id} 
-              className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
+              className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer"
               onClick={() => setEditingCandidate({ ...candidate })}
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 font-bold text-sm shrink-0">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 font-bold text-sm shrink-0 border border-slate-200/50">
                   {candidate.Nombre ? candidate.Nombre.trim().split(/\s+/).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-1.5 flex-wrap">
-                    <h3 className="font-semibold text-gray-900 text-lg leading-none">{candidate.Nombre || 'Sin Nombre'}</h3>
-                    <span className="px-3 py-1 bg-white border border-gray-200 text-gray-800 text-xs font-semibold rounded-full shadow-sm">
+                    <h3 className="font-semibold text-slate-900 text-lg leading-none tracking-tight">{candidate.Nombre || 'Sin Nombre'}</h3>
+                    <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-full shadow-sm">
                       {candidate.Perfil || candidate.Candidatura || 'Sin Perfil'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 line-clamp-1">
+                  <p className="text-sm text-slate-500 line-clamp-1">
                     {candidate['Key Knowledge'] || 'Sin conocimientos registrados'}
                   </p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-6 sm:gap-8 justify-between sm:justify-end w-full sm:w-auto border-t sm:border-t-0 border-gray-100 pt-4 sm:pt-0">
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="text-sm font-medium">
-                    {applications.filter(a => a.candidateId === candidate.id).length}
-                  </span>
-                </div>
+              <div className="flex items-center gap-6 sm:gap-8 justify-between sm:justify-end w-full sm:w-auto border-t sm:border-t-0 border-slate-100 pt-4 sm:pt-0">
+                {candidate.interviewStatus && (
+                  <div className="flex items-center">
+                    <span className={`px-3 py-1.5 text-xs font-medium rounded-full border ${
+                      candidate.interviewStatus === 'pendiente de entrevistar' ? 'bg-amber-50 text-amber-700 border-amber-200/50' :
+                      candidate.interviewStatus === 'entrevistando' ? 'bg-blue-50 text-blue-700 border-blue-200/50' :
+                      candidate.interviewStatus === 'entrevistado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/50' :
+                      'bg-slate-50 text-slate-700 border-slate-200/50'
+                    }`}>
+                      {candidate.interviewStatus === 'pendiente de entrevistar' ? 'Pendiente de entrevistar' :
+                       candidate.interviewStatus === 'entrevistando' ? 'Entrevistando' :
+                       candidate.interviewStatus === 'entrevistado' ? 'Entrevistado' : candidate.interviewStatus}
+                    </span>
+                  </div>
+                )}
                 
                 {candidate.match !== null && (
                   <div className="text-center min-w-[60px]">
-                    <div className="text-xs text-gray-500 mb-0.5">Match</div>
-                    <div className={`font-bold text-lg leading-none ${candidate.match >= 80 ? 'text-emerald-600' : candidate.match >= 50 ? 'text-amber-500' : 'text-red-600'}`}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Match</div>
+                    <div className={`font-black text-xl leading-none ${candidate.match >= 80 ? 'text-emerald-600' : candidate.match >= 50 ? 'text-amber-500' : 'text-red-600'}`}>
                       {candidate.match}%
                     </div>
                   </div>
@@ -162,17 +170,17 @@ export const Candidatos: React.FC = () => {
                 
                 <div className="w-32 flex justify-end">
                   {candidate.status === 'pass' && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-100">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-100/50">
                       <CheckCircle className="w-4 h-4" /> Aprobado
                     </span>
                   )}
                   {candidate.status === 'no-pass' && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-sm font-medium border border-red-100">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 rounded-full text-sm font-medium border border-red-100/50">
                       <XCircle className="w-4 h-4" /> Descartado
                     </span>
                   )}
                   {(candidate.status === 'pending' || candidate.status === 'unassigned') && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-sm font-medium border border-gray-200">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-full text-sm font-medium border border-slate-200/50">
                       <Clock className="w-4 h-4" /> Pendiente
                     </span>
                   )}
@@ -181,12 +189,12 @@ export const Candidatos: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="py-16 text-center bg-white rounded-2xl border border-gray-200 border-dashed">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-400" />
+          <div className="py-16 text-center bg-white rounded-2xl border border-slate-200 border-dashed">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+              <Search className="w-8 h-8 text-slate-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No se encontraron candidatos</h3>
-            <p className="text-gray-500">Intenta ajustar los términos de búsqueda o cambiar de pestaña.</p>
+            <h3 className="text-lg font-medium text-slate-900 mb-1 tracking-tight">No se encontraron candidatos</h3>
+            <p className="text-slate-500">Intenta ajustar los términos de búsqueda o cambiar de pestaña.</p>
           </div>
         )}
       </div>

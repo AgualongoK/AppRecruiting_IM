@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, FunnelChart, Funnel, LabelList } from 'recharts';
 import { Users, MapPin, Briefcase, Calendar } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -22,10 +22,26 @@ export const Dashboard: React.FC = () => {
     return acc;
   }, {} as Record<string, number>);
 
-  const locationData = Object.keys(locationCount).map(key => ({
-    name: key,
-    value: locationCount[key]
-  }));
+  const locationData = Object.keys(locationCount)
+    .map(key => ({
+      name: key,
+      value: locationCount[key]
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const statusCount = allCandidates.reduce((acc, curr) => {
+    const status = curr.interviewStatus || 'pendiente de entrevistar';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const funnelData = [
+    { value: statusCount['pendiente de entrevistar'] || 0, name: 'Pendiente', fill: '#facc15' },
+    { value: statusCount['entrevistando'] || 0, name: 'Entrevistando', fill: '#60a5fa' },
+    { value: statusCount['entrevistado'] || 0, name: 'Entrevistado', fill: '#4ade80' }
+  ].filter(item => item.value > 0);
+
+  const COLORS = ['#0059a3', '#002b5c', '#0087d5', '#66b7e6', '#004280', '#339fdd', '#99cfee', '#001633'];
 
   const dateCount = allCandidates.reduce((acc, curr) => {
     const date = curr['Fecha Solicitud'] || 'Unknown';
@@ -42,44 +58,44 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-3.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100/50">
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Total Candidatos</p>
-            <h3 className="text-2xl font-bold text-gray-900">{allCandidates.length}</h3>
+            <p className="text-sm font-medium text-slate-500">Total Candidatos</p>
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{allCandidates.length}</h3>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-emerald-100 text-emerald-600 rounded-lg">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100/50">
             <Briefcase className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Perfiles Únicos</p>
-            <h3 className="text-2xl font-bold text-gray-900">{Object.keys(profileCount).length}</h3>
+            <p className="text-sm font-medium text-slate-500">Perfiles Únicos</p>
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{Object.keys(profileCount).length}</h3>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-amber-100 text-amber-600 rounded-lg">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-3.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100/50">
             <MapPin className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Ubicaciones</p>
-            <h3 className="text-2xl font-bold text-gray-900">{Object.keys(locationCount).length}</h3>
+            <p className="text-sm font-medium text-slate-500">Ubicaciones</p>
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{Object.keys(locationCount).length}</h3>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="p-3 bg-purple-100 text-purple-600 rounded-lg">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex items-center space-x-5 transition-all hover:shadow-md">
+          <div className="p-3.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-100/50">
             <Calendar className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Última Solicitud</p>
-            <h3 className="text-lg font-bold text-gray-900">
+            <p className="text-sm font-medium text-slate-500">Última Solicitud</p>
+            <h3 className="text-lg font-bold text-slate-900 tracking-tight">
               {dateData.length > 0 ? dateData[dateData.length - 1].date : '-'}
             </h3>
           </div>
@@ -87,32 +103,77 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Candidatos por Perfil</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
+          <h3 className="text-lg font-semibold mb-6 text-slate-800 tracking-tight">Candidatos por Perfil</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={profileData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 12}} />
-                <Tooltip cursor={{fill: '#f3f4f6'}} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                <XAxis type="number" tick={{fill: '#64748b'}} axisLine={{stroke: '#cbd5e1'}} tickLine={false} />
+                <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 12, fill: '#475569'}} axisLine={{stroke: '#cbd5e1'}} tickLine={false} />
+                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Bar dataKey="count" fill="#0059a3" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Evolución de Solicitudes</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
+          <h3 className="text-lg font-semibold mb-6 text-slate-800 tracking-tight">Evolución de Solicitudes</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dateData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" tick={{fontSize: 12}} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="date" tick={{fontSize: 12, fill: '#64748b'}} axisLine={{stroke: '#cbd5e1'}} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{fill: '#64748b'}} axisLine={{stroke: '#cbd5e1'}} tickLine={false} />
+                <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Line type="monotone" dataKey="count" stroke="#0059a3" strokeWidth={3} dot={{r: 4, fill: '#0059a3', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6, strokeWidth: 0}} />
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
+          <h3 className="text-lg font-semibold mb-6 text-slate-800 tracking-tight">Distribución por Localización</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={locationData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  innerRadius={60}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {locationData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Legend iconType="circle" wrapperStyle={{fontSize: '12px', color: '#475569'}} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
+          <h3 className="text-lg font-semibold mb-6 text-slate-800 tracking-tight">Estado de Entrevistas</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <FunnelChart>
+                <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Funnel
+                  dataKey="value"
+                  data={funnelData}
+                  isAnimationActive
+                >
+                  <LabelList position="right" fill="#475569" stroke="none" dataKey="name" fontSize={12} />
+                </Funnel>
+              </FunnelChart>
             </ResponsiveContainer>
           </div>
         </div>
