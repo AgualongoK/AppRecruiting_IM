@@ -294,68 +294,75 @@ export const DrivenValue: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="p-6 space-y-4">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {teamCandidates.map((candidate) => (
               <div 
                 key={candidate.id} 
-                className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-5 group"
+                className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all flex flex-col relative group"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full flex items-center justify-center text-indigo-700 font-bold text-lg shrink-0 border border-indigo-100/50 shadow-sm">
+                {/* Status Badge */}
+                <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${
+                    candidate.drivenValueStatus === 'Proyecto' 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' 
+                      : 'bg-amber-50 text-amber-700 border-amber-100/50'
+                  }`}>
+                    {candidate.drivenValueStatus || 'Staffing'}
+                  </span>
+                  {candidate.drivenValueStatus === 'Proyecto' && candidate.Cliente && (
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2.5 py-1 rounded-md max-w-[120px] truncate border border-slate-200/50" title={candidate.Cliente}>
+                      🏢 {candidate.Cliente}
+                    </span>
+                  )}
+                </div>
+
+                {/* Header: Avatar & Name */}
+                <div className="flex items-center gap-4 mb-5 pr-20">
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xl shrink-0 border border-indigo-100/50 shadow-sm">
                     {candidate.Nombre ? candidate.Nombre.trim().split(/\s+/).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
                   </div>
                   <div>
-                    <div className="flex items-center gap-3 mb-1.5 flex-wrap">
-                      <h3 className="font-semibold text-slate-900 text-lg leading-none tracking-tight">{candidate.Nombre || 'Sin Nombre'}</h3>
-                      <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-full shadow-sm">
-                        {candidate.Perfil || candidate.Candidatura || 'Sin Perfil'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-500 line-clamp-1">
-                      {candidate['Key Knowledge'] || 'Sin conocimientos registrados'}
-                    </p>
+                    <h3 className="font-bold text-slate-900 text-lg leading-tight tracking-tight line-clamp-2 mb-1">
+                      {candidate.Nombre || 'Sin Nombre'}
+                    </h3>
+                    <span className="inline-block px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg shadow-sm">
+                      {candidate.Perfil || candidate.Candidatura || 'Sin Perfil'}
+                    </span>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-6 sm:gap-8 justify-between sm:justify-end w-full sm:w-auto border-t sm:border-t-0 border-slate-100 pt-4 sm:pt-0">
+                {/* Details */}
+                <div className="space-y-3 mb-6 flex-1">
                   {candidate.Localización && (
-                    <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium">
-                      <MapPin className="w-4 h-4" />
-                      {candidate.Localización}
+                    <div className="flex items-center gap-2 text-slate-600 text-sm">
+                      <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="truncate">{candidate.Localización}</span>
                     </div>
                   )}
-                  
-                  <div className="w-32 flex flex-col items-end gap-1.5">
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${
-                      candidate.drivenValueStatus === 'Proyecto' 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' 
-                        : 'bg-amber-50 text-amber-700 border-amber-100/50'
-                    }`}>
-                      {candidate.drivenValueStatus || 'Staffing'}
+                  <div className="flex items-start gap-2 text-slate-600 text-sm">
+                    <Briefcase className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                    <span className="line-clamp-2 leading-relaxed">
+                      {candidate['Key Knowledge'] || 'Sin conocimientos registrados'}
                     </span>
-                    {candidate.drivenValueStatus === 'Proyecto' && candidate.Cliente && (
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 px-2.5 py-1 rounded-md max-w-full truncate border border-slate-200/50" title={candidate.Cliente}>
-                        🏢 {candidate.Cliente}
-                      </span>
-                    )}
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setEditingCandidate({ ...candidate })}
-                      className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
-                      title="Editar Estado"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => setCandidateToDelete(candidate)}
-                      className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                      title="Eliminar del equipo"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-auto">
+                  <button 
+                    onClick={() => setEditingCandidate({ ...candidate })}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    Editar
+                  </button>
+                  <button 
+                    onClick={() => setCandidateToDelete(candidate)}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar
+                  </button>
                 </div>
               </div>
             ))}

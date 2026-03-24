@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, FunnelChart, Funnel, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, LabelList } from 'recharts';
 import { Users, MapPin, Briefcase, Calendar } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -35,11 +35,11 @@ export const Dashboard: React.FC = () => {
     return acc;
   }, {} as Record<string, number>);
 
-  const funnelData = [
-    { value: statusCount['pendiente de entrevistar'] || 0, name: 'Pendiente', fill: '#facc15' },
-    { value: statusCount['entrevistando'] || 0, name: 'Entrevistando', fill: '#60a5fa' },
-    { value: statusCount['entrevistado'] || 0, name: 'Entrevistado', fill: '#4ade80' }
-  ].filter(item => item.value > 0);
+  const interviewData = [
+    { name: 'Pendiente', count: statusCount['pendiente de entrevistar'] || 0, fill: '#94a3b8' },
+    { name: 'Entrevistando', count: statusCount['entrevistando'] || 0, fill: '#3b82f6' },
+    { name: 'Entrevistado', count: statusCount['entrevistado'] || 0, fill: '#0059a3' }
+  ];
 
   const COLORS = ['#0059a3', '#002b5c', '#0087d5', '#66b7e6', '#004280', '#339fdd', '#99cfee', '#001633'];
 
@@ -164,16 +164,17 @@ export const Dashboard: React.FC = () => {
           <h3 className="text-lg font-semibold mb-6 text-slate-800 tracking-tight">Estado de Entrevistas</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <FunnelChart>
-                <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                <Funnel
-                  dataKey="value"
-                  data={funnelData}
-                  isAnimationActive
-                >
-                  <LabelList position="right" fill="#475569" stroke="none" dataKey="name" fontSize={12} />
-                </Funnel>
-              </FunnelChart>
+              <BarChart data={interviewData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748b'}} axisLine={{stroke: '#cbd5e1'}} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{fill: '#64748b'}} axisLine={{stroke: '#cbd5e1'}} tickLine={false} />
+                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {interviewData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
