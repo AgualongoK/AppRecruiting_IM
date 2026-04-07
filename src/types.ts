@@ -16,6 +16,8 @@ export interface Candidate {
   Candidatura?: string;
   interviewStatus?: string;
   'Fecha Solicitud'?: string;
+  responsable?: string;
+  Entrevistador?: string;
   [key: string]: any;
 }
 
@@ -37,4 +39,8 @@ export interface Application {
   offerId: string;
   status: string;
   date: string;
+  decidedBy?: string;
+  aiRecommendation?: string;
+  isFit?: boolean;
+  score?: number;
 }

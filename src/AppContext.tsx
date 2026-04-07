@@ -13,7 +13,7 @@ interface AppContextType {
   updateOffer: (id: string, data: Partial<Offer>) => void;
   deleteOffer: (id: string) => void;
   addApplication: (application: Application) => void;
-  updateApplicationStatus: (id: string, status: string) => void;
+  updateApplicationStatus: (id: string, status: string, decidedBy?: string) => void;
   addDrivenValueCandidates: (candidates: Candidate[]) => void;
   deleteDrivenValueCandidate: (id: string) => void;
   isRefreshing: boolean;
@@ -116,8 +116,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setApplications([...applications, application]);
   };
 
-  const updateApplicationStatus = (id: string, status: string) => {
-    setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  const updateApplicationStatus = (id: string, status: string, decidedBy?: string) => {
+    setApplications(prev => {
+      const app = prev.find(a => a.id === id);
+      if (app && decidedBy) {
+        setAllCandidates(prevCands => 
+          prevCands.map(c => c.id === app.candidateId ? { ...c, responsable: decidedBy } : c)
+        );
+      }
+      return prev.map(a => a.id === id ? { ...a, status, decidedBy } : a);
+    });
   };
 
   const addDrivenValueCandidates = (candidates: Candidate[]) => {

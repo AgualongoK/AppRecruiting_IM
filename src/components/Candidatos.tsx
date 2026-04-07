@@ -11,6 +11,11 @@ export const Candidatos: React.FC = () => {
   const [newField, setNewField] = useState('');
   const [showNewFieldInput, setShowNewFieldInput] = useState(false);
   const [activeTab, setActiveTab] = useState<'Todos' | 'Aprobados' | 'Descartados' | 'Pendientes'>('Todos');
+  const [filterEntrevistador, setFilterEntrevistador] = useState('');
+  const [filterResponsable, setFilterResponsable] = useState('');
+
+  const uniqueEntrevistadores = Array.from(new Set(allCandidates.map(c => c.Entrevistador).filter(Boolean))) as string[];
+  const uniqueResponsables = Array.from(new Set(allCandidates.map(c => c.responsable).filter(Boolean))) as string[];
 
   const getCandidateStatusInfo = (candidateId: string) => {
     const candidateApps = applications.filter(app => app.candidateId === candidateId);
@@ -43,11 +48,15 @@ export const Candidatos: React.FC = () => {
     return true;
   });
 
-  const finalFilteredData = filteredByTab.filter(candidate => 
-    Object.values(candidate).some(val => 
+  const finalFilteredData = filteredByTab.filter(candidate => {
+    const matchesSearch = Object.values(candidate).some(val => 
       String(val).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+    );
+    const matchesEntrevistador = filterEntrevistador ? candidate.Entrevistador === filterEntrevistador : true;
+    const matchesResponsable = filterResponsable ? candidate.responsable === filterResponsable : true;
+    
+    return matchesSearch && matchesEntrevistador && matchesResponsable;
+  });
 
   const counts = {
     Todos: candidatesWithStatus.length,
@@ -118,6 +127,29 @@ export const Candidatos: React.FC = () => {
         </div>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <select
+          className="p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white shadow-sm flex-1"
+          value={filterEntrevistador}
+          onChange={(e) => setFilterEntrevistador(e.target.value)}
+        >
+          <option value="">Todos los Entrevistadores</option>
+          {uniqueEntrevistadores.map(e => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+        <select
+          className="p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white shadow-sm flex-1"
+          value={filterResponsable}
+          onChange={(e) => setFilterResponsable(e.target.value)}
+        >
+          <option value="">Todos los Responsables</option>
+          {uniqueResponsables.map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="space-y-4">
         {finalFilteredData.length > 0 ? (
           finalFilteredData.map((candidate) => (
@@ -140,6 +172,18 @@ export const Candidatos: React.FC = () => {
                   <p className="text-sm text-slate-500 line-clamp-1">
                     {candidate['Key Knowledge'] || 'Sin conocimientos registrados'}
                   </p>
+                  <div className="flex gap-3 mt-2">
+                    {candidate.Entrevistador && (
+                      <span className="text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                        <span className="font-semibold">Entrevistador:</span> {candidate.Entrevistador}
+                      </span>
+                    )}
+                    {candidate.responsable && (
+                      <span className="text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                        <span className="font-semibold">Responsable:</span> {candidate.responsable}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -285,12 +329,22 @@ export const Candidatos: React.FC = () => {
                   <input 
                     type="text" 
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={editingCandidate.interviewer || ''}
-                    onChange={e => setEditingCandidate({...editingCandidate, interviewer: e.target.value})}
+                    value={editingCandidate.Entrevistador || ''}
+                    onChange={e => setEditingCandidate({...editingCandidate, Entrevistador: e.target.value})}
                     placeholder="¿Quién lo está entrevistando?"
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={editingCandidate.responsable || ''}
+                    onChange={e => setEditingCandidate({...editingCandidate, responsable: e.target.value})}
+                    placeholder="Responsable de la decisión"
+                  />
+                </div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Estado de Entrevista</label>
                   <select 
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"

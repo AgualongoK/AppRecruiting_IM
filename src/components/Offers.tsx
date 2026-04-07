@@ -13,6 +13,12 @@ export const Offers: React.FC = () => {
   const [editingOfferData, setEditingOfferData] = useState<Partial<Offer>>({});
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [viewingCandidate, setViewingCandidate] = useState<Candidate | null>(null);
+  const [statusModal, setStatusModal] = useState<{ isOpen: boolean, appId: string, status: string, name: string }>({
+    isOpen: false,
+    appId: '',
+    status: '',
+    name: ''
+  });
 
   const handleAddOffer = async () => {
     if (newOffer.title && newOffer.description) {
@@ -468,15 +474,21 @@ export const Offers: React.FC = () => {
                           </div>
                         )}
 
+                        {app.decidedBy && (
+                          <div className="text-xs text-slate-500 mt-2 flex items-center gap-1.5 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <span className="font-semibold text-slate-700">Decisión tomada por:</span> {app.decidedBy}
+                          </div>
+                        )}
+
                         <div className="flex gap-3 pt-2">
                           <button 
-                            onClick={() => updateApplicationStatus(app.candidateId, app.offerId, 'pass')}
+                            onClick={() => setStatusModal({ isOpen: true, appId: app.id, status: 'pass', name: '' })}
                             className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all shadow-sm ${app.status === 'pass' ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'}`}
                           >
                             Marcar Apto
                           </button>
                           <button 
-                            onClick={() => updateApplicationStatus(app.candidateId, app.offerId, 'no-pass')}
+                            onClick={() => setStatusModal({ isOpen: true, appId: app.id, status: 'no-pass', name: '' })}
                             className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all shadow-sm ${app.status === 'no-pass' ? 'bg-red-600 text-white shadow-red-200' : 'bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200'}`}
                           >
                             Marcar No Apto
@@ -545,6 +557,9 @@ export const Offers: React.FC = () => {
                             <span className="text-sm font-medium text-gray-900">
                               {app.status === 'pending' ? 'Pendiente' : app.status === 'pass' ? 'Apto' : 'No Apto'}
                             </span>
+                            {app.decidedBy && (
+                              <span className="block text-xs text-gray-500 mt-1">por {app.decidedBy}</span>
+                            )}
                           </div>
                         </div>
                         {app.aiRecommendation && (
@@ -583,6 +598,55 @@ export const Offers: React.FC = () => {
                 className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Decision Modal */}
+      {statusModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col p-6 border border-slate-100">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Confirmar Decisión</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Por favor, introduce tu nombre para registrar que has marcado a este candidato como <span className="font-bold">{statusModal.status === 'pass' ? 'Apto' : 'No Apto'}</span>.
+            </p>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Tu Nombre</label>
+              <input
+                type="text"
+                placeholder="Ej. Juan Pérez"
+                className="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm"
+                value={statusModal.name}
+                onChange={(e) => setStatusModal({ ...statusModal, name: e.target.value })}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && statusModal.name.trim() !== '') {
+                    updateApplicationStatus(statusModal.appId, statusModal.status, statusModal.name.trim());
+                    setStatusModal({ isOpen: false, appId: '', status: '', name: '' });
+                  }
+                }}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setStatusModal({ isOpen: false, appId: '', status: '', name: '' })}
+                className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (statusModal.name.trim() !== '') {
+                    updateApplicationStatus(statusModal.appId, statusModal.status, statusModal.name.trim());
+                    setStatusModal({ isOpen: false, appId: '', status: '', name: '' });
+                  }
+                }}
+                disabled={statusModal.name.trim() === ''}
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 shadow-sm"
+              >
+                Confirmar
               </button>
             </div>
           </div>
